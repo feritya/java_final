@@ -4,19 +4,17 @@ import org.bytedeco.opencv.opencv_core.Mat;
 import org.bytedeco.opencv.opencv_core.Scalar;
 import org.bytedeco.opencv.opencv_videoio.VideoCapture;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 
-// import org.opencv.core.Mat;
-import org.opencv.core.Core;
-import org.opencv.imgproc.Imgproc;
- 
+//kütüphanelerin eklenmesi
+
+
+//kullanıcı arayüzü bileşenlerinin oluşturulması için MainFrame sınıfı oluşturuldu
 public class MainFrame extends JFrame {
     private JLabel imageLabel;
     private JButton captureButton;
@@ -24,10 +22,10 @@ public class MainFrame extends JFrame {
     private JButton filterButton;
     private JButton shareButton;
 
-    private CameraManager cameraManager;
+    private CameraManager cameraManager;//kamera yöneticisi sınıfı
     private Mat currentPhoto;
 
-    public MainFrame() {
+    public MainFrame() {//yapıcı metot
         setTitle("Fotoğraf Uygulaması");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setPreferredSize(new Dimension(600, 400));
@@ -46,72 +44,69 @@ public class MainFrame extends JFrame {
         panel.setLayout(new BorderLayout());
         panel.add(imageLabel, BorderLayout.CENTER);
 
+        // Düğmelerin yerleştirilmesi
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(captureButton);
         buttonPanel.add(saveButton);
         buttonPanel.add(filterButton);
         buttonPanel.add(shareButton);
         panel.add(buttonPanel, BorderLayout.SOUTH);
-
+        // Pencereye panelin eklenmesi
         add(panel);
         pack();
         setVisible(true);
 
         // Düğme olaylarının dinlenmesi
         captureButton.addActionListener(new ActionListener() {
-            @Override
             public void actionPerformed(ActionEvent e) {
                 // Fotoğraf çekme işlemleri
                 currentPhoto = cameraManager.capturePhoto();
                 displayPhoto(currentPhoto);
             }
         });
-
+        // Fotoğrafı kaydetme işlemleri
         saveButton.addActionListener(new ActionListener() {
-            @Override
             public void actionPerformed(ActionEvent e) {
                 // Fotoğrafı kaydetme işlemleri
                 savePhoto(currentPhoto);
             }
         });
-
+        // Filtreleme işlemleri
         filterButton.addActionListener(new ActionListener() {
-            @Override
             public void actionPerformed(ActionEvent e) {
                 // Filtreleme işlemleri
                 showFilterOptions();
             }
         });
-
+        // Paylaşma işlemleri
         shareButton.addActionListener(new ActionListener() {
-            @Override
             public void actionPerformed(ActionEvent e) {
                 // Paylaşma işlemleri
                 sharePhoto(currentPhoto);
             }
         });
     }
-
-    private void displayPhoto(org.bytedeco.opencv.opencv_core.Mat photo) {
-        BufferedImage image = matToBufferedImage(photo);
+        // Fotoğrafın görüntülenmesi
+    private void displayPhoto(Mat photo) {
+        BufferedImage image = cameraManager.matToBufferedImage(photo);
         ImageIcon icon = new ImageIcon(image);
         imageLabel.setIcon(icon);
     }
-
-    private void savePhoto(Mat photo) {
+    //  Fotoğrafın kaydedilmesi
+    private void savePhoto(Mat photo) {//fotoğrafın kaydedilmesi için metot
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Fotoğrafı Kaydet");
         int userSelection = fileChooser.showSaveDialog(this);
-
-        if (userSelection == JFileChooser.APPROVE_OPTION) {
+        // Dosya seçildiyse yapılacak 
+        if (userSelection == JFileChooser.APPROVE_OPTION) { //kullanıcı seçim yaptıysa
             File fileToSave = fileChooser.getSelectedFile();
             String filePath = fileToSave.getAbsolutePath();
             opencv_imgcodecs.imwrite(filePath, photo);
             JOptionPane.showMessageDialog(this, "Fotoğraf başarıyla kaydedildi.");
         }
     }
-
-    private void showFilterOptions() {
+    // Filtreleme seçeneklerinin gösterilmesini sağlayan metodu kullanıcı arayüzüne ekledik
+    private void showFilterOptions() {//filtreleme seçeneklerinin gösterilmesi için metot
         String[] filters = {"Aydınlatma", "Siyah Beyaz", "Karartma"};
         String selectedFilter = (String) JOptionPane.showInputDialog(
                 this,
@@ -121,38 +116,13 @@ public class MainFrame extends JFrame {
                 null,
                 filters,
                 filters[0]);
-
+        // Filtre seçildiyse yapılacak işlemler
         if (selectedFilter != null) {
-            Mat filteredPhoto = applyFilter(selectedFilter, currentPhoto);
+            Mat filteredPhoto = cameraManager.applyFilter(selectedFilter, currentPhoto);
             displayPhoto(filteredPhoto);
         }
     }
-
-    private Mat applyFilter(String filterName, Mat photo) {
-        Mat filteredPhoto = new Mat();
-
-        switch (filterName) {
-            case "Aydınlatma":
-                double brightness = 50.0; // Aydınlatma değeri
-                Mat ımage = new Mat();
-                Mat filteredPhotoMat= new Mat();
-                photo.convertTo(filteredPhoto, -1, 1, brightness);
-
-                // opencv_core.add(photo,  Scalar(brightness,brightness,brightness), filteredPhoto);
-                break;
-            case "Siyah Beyaz":
-            opencv_core.cvtColor(photo, filteredPhoto, opencv_core.COLOR_BGR2GRAY);
-
-                break;
-            case "Karartma":
-                double intensity = 50.0; // Karartma değeri
-                opencv_core.subtract(photo, new Scalar(intensity, intensity, intensity), filteredPhoto);
-                break;
-        }
-
-        return filteredPhoto;
-    }
-
+    // Fotoğrafın paylaşılmasını sağlayan metodu kullanıcı arayüzüne ekledik
     private void sharePhoto(Mat photo) {
         String[] socialMedia = {"Gmail", "Facebook", "Twitter"};
         String selectedMedia = (String) JOptionPane.showInputDialog(
@@ -163,67 +133,95 @@ public class MainFrame extends JFrame {
                 null,
                 socialMedia,
                 socialMedia[0]);
-
+        // Sosyal medya seçildiyse yapılacak işlemler
         if (selectedMedia != null) {
-            String photoPath = saveTempPhoto(photo);
+            String photoPath = cameraManager.saveTempPhoto(photo);
             switch (selectedMedia) {
                 case "Gmail":
-                    shareWithGmail(photoPath);
+                    cameraManager.shareWithGmail(photoPath);
                     break;
                 case "Facebook":
-                    shareWithFacebook(photoPath);
+                    cameraManager.shareWithFacebook(photoPath);
                     break;
                 case "Twitter":
-                    shareWithTwitter(photoPath);
+                    cameraManager.shareWithTwitter(photoPath);
                     break;
             }
         }
     }
+    // Ana metot oluşturuldu ve kullanıcı arayüzü başlatıldı
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new MainFrame();
+            }
+        });
+    }
+}
+// CameraManager sınıfını oluşturduk ve kamera yöneticisi sınıfı olarak adlandırdık
+class CameraManager {
+    private VideoCapture videoCapture;
+    //      Yapıcı metot oluşturduk ve videoCapture nesnesini oluşturduk
+    public CameraManager() {
+        videoCapture = new VideoCapture();
+    }
+    // Kameranın açılmasını sağlayan metodu oluşturduk
+    public Mat capturePhoto() {
+        Mat photo = new Mat();
+        videoCapture.read(photo);
+        return photo;
+    }
+    // Mat tipindeki fotoğrafı BufferedImage tipine dönüştüren metodu oluşturduk
+    public BufferedImage matToBufferedImage(Mat mat) {//mat tipindeki fotoğrafı BufferedImage tipine dönüştüren metot
+        int width = mat.cols();
+        int height = mat.rows();
+        int channels = mat.channels();
+        byte[] data = new byte[width * height * channels];
+        mat.data().get(data);//fotoğrafın verilerini alıyoruz
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+        final byte[] targetPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
+        System.arraycopy(data, 0, targetPixels, 0, data.length);
+        return image;
+    }
+    // Filtreleme işlemlerini gerçekleştiren metodu oluşturduk
+    public Mat applyFilter(String filterName, Mat photo) {
+        Mat filteredPhoto = new Mat();
+// Filtreleme işlemleri için kodu doldurman gerekir
+        switch (filterName) {//filtreleme işlemleri için switch case yapısı
+            case "Aydınlatma":
+                double brightness = 50.0; // Aydınlatma değeri
+                opencv_core.add(photo, new Scalar(brightness, brightness, brightness), filteredPhoto);
+                break;
+            case "Siyah Beyaz":
+                opencv_core.cvtColor(photo, filteredPhoto, opencv_core.COLOR_BGR2GRAY);
+                break;
+            case "Karartma":
+                double intensity = 50.0; // Karartma değeri
+                opencv_core.subtract(photo, new Scalar(intensity, intensity, intensity), filteredPhoto);
+                break;
+        }
 
-    private String saveTempPhoto(Mat photo) {
+        return filteredPhoto;
+    }
+    // Fotoğrafın geçici olarak kaydedilmesini sağlayan metodu oluşturduk
+    public String saveTempPhoto(Mat photo) {
         String tempDir = System.getProperty("java.io.tmpdir");
         String tempFilePath = tempDir + File.separator + "temp_photo.jpg";
         opencv_imgcodecs.imwrite(tempFilePath, photo);
         return tempFilePath;
     }
-
-    private void shareWithGmail(String photoPath) {
-        // TODO: Gmail ile fotoğrafın paylaşılması
-        JOptionPane.showMessageDialog(this, "Fotoğraf Gmail ile paylaşıldı.");
+   
+    public void shareWithGmail(String photoPath) {
+        JOptionPane.showMessageDialog(null, "Fotoğraf Gmail ile paylaşıldı.");
     }
 
-    private void shareWithFacebook(String photoPath) {
-        // TODO: Facebook ile fotoğrafın paylaşılması
-        JOptionPane.showMessageDialog(this, "Fotoğraf Facebook ile paylaşıldı.");
+    public void shareWithFacebook(String photoPath) {
+       
+        JOptionPane.showMessageDialog(null, "Fotoğraf Facebook ile paylaşıldı.");
     }
 
-    private void shareWithTwitter(String photoPath) {
-        // TODO: Twitter ile fotoğrafın paylaşılması
-        JOptionPane.showMessageDialog(this, "Fotoğraf Twitter ile paylaşıldı.");
-    }
+    public void shareWithTwitter(String photoPath) {
 
-    private BufferedImage matToBufferedImage(org.opencv.core.Mat mat) {
-      
-
-        int width = mat.cols();
-        int height = mat.rows();
-        int channels = mat.channels();
-
-        byte[] data = new byte[width * height * channels];
-        mat.get(0, 0, data);
-
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
-        image.getRaster().setDataElements(0, 0, width, height, data);
-
-        return image;
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new MainFrame();
-            }
-        });
+        JOptionPane.showMessageDialog(null, "Fotoğraf Twitter ile paylaşıldı.");
     }
 }
